@@ -52,31 +52,26 @@ websocket format :
 }
 */
 
-class BinanceWrapper extends EventEmmiter {
+class BinanceService extends EventEmmiter {
 
-    #symbol;
-    #interval;
-    #websocket;
+    listen(params) {
 
-    constructor(params) {
-        super();
+        let { symbol, interval } = params;
 
-        const { symbol, interval } = params;
-        this.symbol = symbol;
-        this.interval = interval;
-    }
-
-    close() {
-        if(this.websocket) {
-            this.websocket.close();
+        if(!symbol) {
+            throw new Error("You must specify symbol to use");
         }
-    }
-    
-    listen() {
+
+        if(!interval) {
+            throw new Error("You must specify interval to use");
+        }
+
         let websocketname = this.symbol.toLowerCase() + "@kline_" + this.interval;
-        this.websocket = binance.futuresSubscribe(websocketname, (e) => {
+        const websocket = binance.futuresSubscribe(websocketname, (e) => {
             if(e.k.x) {
                 const klinePretty = {
+                    symbol,
+                    interval,
                     opentime:e.k.t,
                     open:e.k.o,
                     high:e.k.h,
@@ -94,35 +89,45 @@ class BinanceWrapper extends EventEmmiter {
                 this.emit("newKline", klinePretty);
             }
         });
+
+        return websocket;
     }
 
     async getHistoricalKlines(params) {
 
-        let { startTime, limit } = params;
+        let { startTime, limit, symbol, interval } = params;
+
+        if(!symbol) {
+            throw new Error("You must specify symbol to use");
+        }
+
+        if(!interval) {
+            throw new Error("You must specify interval to use");
+        }
 
         if(!limit) {
             limit = 400;
         }
 
+        const baseDateTime = new Date();
+
         const klines = 
           await binance.futuresCandles(
-            this.symbol,
-            this.interval,
+            symbol,
+            interval,
             {
                 limit,
                 startTime
             }
         );
 
-        if(!startTime) {
-            klines.pop();
-        }
-
         const klinesPretty = [];
 
         for(let i = 0; i < klines.length; i++) {
             const k = klines[i];
             klinesPretty.push({
+                symbol,
+                interval,
                 opentime:k[0],
                 open:k[1],
                 high:k[2],
@@ -138,8 +143,14 @@ class BinanceWrapper extends EventEmmiter {
             });
         }
 
+        // Remove kline if it is not closed
+        if(baseDateTime.getTime() > klinesPretty[klinesPretty.length - 1].opentime &&
+            baseDateTime.getTime() < klinesPretty[klinesPretty.length - 1].closetime) {
+            klinesPretty.pop();
+        }
+
         return klinesPretty;
     }
 }
 
-module.exports = BinanceWrapper
+module.exports = BinanceService
