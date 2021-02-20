@@ -17,6 +17,6 @@ const klineSchema = new mongoose.Schema({
     ignored: String
 });
 
-const Kline = mongoose.model('Kline', klineSchema);
+const KlineModel = mongoose.model('Kline', klineSchema);
 
-module.exports.Kline = Kline;
+module.exports.KlineModel = KlineModel;

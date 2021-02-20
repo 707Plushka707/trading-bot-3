@@ -144,12 +144,13 @@ class BinanceService extends EventEmmiter {
         }
 
         // Remove kline if it is not closed
+        let isClosed = true;;
         if(baseDateTime.getTime() > klinesPretty[klinesPretty.length - 1].opentime &&
             baseDateTime.getTime() < klinesPretty[klinesPretty.length - 1].closetime) {
-            klinesPretty.pop();
+            isClosed = false;
         }
 
-        return klinesPretty;
+        return { klines: klinesPretty, isClosed };
     }
 }
 
