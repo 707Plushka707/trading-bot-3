@@ -13,16 +13,16 @@ const start = async() => {
 
     const testconfig = {
         symbol: 'BTCUSDT',
-        interval: '1m'
+        interval: '4h'
     };
     
-    const firstKline = await 
-        KlineModel.findOne(testconfig)
-            .sort({ closetime: 1 })
-            .limit(1)
+    // const firstKline = await 
+    //     KlineModel.findOne(testconfig)
+    //         .sort({ closetime: 1 })
+    //         .limit(1)
 
-    console.log(firstKline.closetime);
-    return;
+    // console.log(firstKline.closetime);
+    // return;
 
     const klines = 
         await KlineModel.find(testconfig)
