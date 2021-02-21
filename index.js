@@ -4,6 +4,8 @@ const { consoleLogger, fileLogger } = require('./utils/logger');
 const BinanceService = require('./service/binance')
 const { KlineModel } = require('./model/klines')
 const MacdEma200Strategy = require('./strategy/macdema200strategy');
+const PercentTradeStrategy = require('./strategy/percentstrategy');
+const Twopercentanalyze = require('./analyse/twopercentanalyze');
 const { exitOnError } = require('winston');
 
 const start = async() => {
@@ -13,7 +15,8 @@ const start = async() => {
 
     const testconfig = {
         symbol: 'BTCUSDT',
-        interval: '1m'
+        interval: '1m',
+        //closetime: { $gt: new Date(2020,12,11) }
     };
     
     const firstKline = await 
@@ -21,18 +24,52 @@ const start = async() => {
             .sort({ closetime: 1 })
             .limit(1)
 
-    console.log(firstKline.closetime);
-    return;
 
-    const klines = 
-        await KlineModel.find(testconfig)
-            .sort({ closetime: 1 });
+    let lowerClosetime = new Date(firstKline.closetime);
+    let higherCloseTime = new Date(firstKline.closetime);
+    higherCloseTime.setDate(higherCloseTime.getDate() + 1);
 
-    // console.log(klines[20].toJSON().open);
-    const macdEma200Strategy = new MacdEma200Strategy();
-    klines.forEach(k => {
-        macdEma200Strategy.addKline(k.toJSON());
-    })
+    const twopercentanalyze = new Twopercentanalyze();
+    const percentTradeStrategy = new PercentTradeStrategy();
+
+    do {
+        const query = { ...testconfig, closetime: { $gt: lowerClosetime,  $lt: higherCloseTime } }
+        const klines = 
+            await KlineModel.find(query)
+                .sort({ closetime: 1 })
+    
+        if(klines.length == 0) {
+            break;
+        }
+
+        for(let i=0; i < klines.length; i++) {
+            percentTradeStrategy.addKline(klines[i].toJSON());
+        }
+
+        //console.log(klines[klines.length - 1].closetime)
+
+        lowerClosetime = new Date(klines[klines.length - 1].closetime);
+        higherCloseTime = new Date(klines[klines.length - 1].closetime);
+        higherCloseTime.setDate(higherCloseTime.getDate() + 30);
+
+    } while(true);
+
+    // query = { closetime: { $gt: lowerClosetime,  $lt: higherCloseTime }, ...testconfig }
+    // klines = 
+    //     await KlineModel.find(query)
+    //         .sort({ closetime: 1 })
+    //         .limit(4000);
+
+    //         console.log("new")
+    // klines.forEach(k => {
+    //     console.log(k.closetime);
+    // })
+
+    // // console.log(klines[20].toJSON().open);
+    // const macdEma200Strategy = new MacdEma200Strategy();
+    // klines.forEach(k => {
+    //     macdEma200Strategy.addKline(k.toJSON());
+    // })
 
     console.log("end");
     // klines.forEach(k => {
