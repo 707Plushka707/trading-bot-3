@@ -13,7 +13,6 @@ class PercentTradeStrategy extends TradeStrategy {
     */
     longs = new Array();
     shorts = new Array();
-    firstPrice = 0;
 
     maxMinutesToClose = 0;
     avgMinutesToClose = -1;
@@ -35,13 +34,11 @@ class PercentTradeStrategy extends TradeStrategy {
             if(trend == 1) {
                 // uptrend
                 this.addLong(lastKline.close * 1, lastKline.closetime);
-                this.firstPrice = lastKline.close * 1;
             }
             
             if(trend == -1) {
                 // downtrend
                 this.addShort(lastKline.close * 1, lastKline.closetime);
-                this.firstPrice = lastKline.close * 1;
             }
 
             return;
@@ -53,7 +50,7 @@ class PercentTradeStrategy extends TradeStrategy {
         if(lastKline.close * 1 >= nextLongPrice) {
             while(lastKline.close >= nextLongPrice) {
                 // +2%
-                if(this.longs.length >= this.shorts.length) {
+                if(this.longs.length > this.shorts.length) {
                     // close all
                     this.longs.forEach((l) => {
                         this.totalWin += ((nextLongPrice * l.amount) - this.BASE_ASSET);
@@ -71,7 +68,6 @@ class PercentTradeStrategy extends TradeStrategy {
                 
                 // open long
                 this.addLong(nextLongPrice, lastKline.closetime);
-                this.firstPrice = lastKline.close * 1;
 
                 // get next long price
                 nextLongPrice = this.getNextLongPrice();
@@ -83,7 +79,7 @@ class PercentTradeStrategy extends TradeStrategy {
         if(lastKline.close * 1 <= nextShortPrice) {
             while(lastKline.close <= nextShortPrice) {
                 // -2%
-                if(this.shorts.length >= this.longs.length) {
+                if(this.shorts.length > this.longs.length) {
                     // close all
                     this.shorts.forEach((s) => {
                         this.totalWin += ((nextShortPrice * s.amount) - this.BASE_ASSET) * -1;
@@ -101,7 +97,6 @@ class PercentTradeStrategy extends TradeStrategy {
                 
                 // open long
                 this.addShort(nextShortPrice, lastKline.closetime);
-                this.firstPrice = lastKline.close * 1;
 
                 // get next short price
                 nextShortPrice = this.getNextShortPrice();
@@ -110,38 +105,70 @@ class PercentTradeStrategy extends TradeStrategy {
     }
 
     getNextLongPrice() {
-        let nextLongPrice = this.firstPrice;
-        let lastTradePrice;
+
+        let nextLongPrice = -1;
+        let firstPrice = -1;
+        let lastLongPrice = -1;
         let i = 1;
 
         if(this.longs.length == 0) {
-            lastTradePrice = this.shorts[0].open * 1;
+            firstPrice = this.shorts[0].open;
+            lastLongPrice = firstPrice;
         } else {
-            lastTradePrice = this.longs[this.longs.length - 1].open * 1;
+            firstPrice = this.longs[0].open;
+            lastLongPrice = this.longs[this.longs.length - 1].open;
         }
 
-        while(nextLongPrice <= lastTradePrice) {
-            nextLongPrice = this.firstPrice * Math.pow(1.02, i);
+        nextLongPrice = firstPrice;
+        while(nextLongPrice <= lastLongPrice) {
+            let coef = 0.02 * i;
+            nextLongPrice = firstPrice * (1 + coef);
             i++;
         }
+        
         return nextLongPrice;
+
+        // let nextLongPrice = this.firstPrice;
+        // let lastTradePrice;
+        // let i = 1;
+
+        // if(this.longs.length == 0) {
+        //     lastTradePrice = this.shorts[0].open * 1;
+        // } else {
+        //     lastTradePrice = this.longs[this.longs.length - 1].open * 1;
+        // }
+
+        // while(nextLongPrice <= lastTradePrice) {
+        //     let coef = 0.02 * i;
+        //     nextLongPrice = this.firstPrice * (1 + coef);
+        //     //nextLongPrice = this.firstPrice * Math.pow(1.02, i);
+        //     i++;
+        // }
+        // return nextLongPrice;
     }
 
     getNextShortPrice() {
-        let nextShortPrice = this.firstPrice;
-        let lastTradePrice;
+
+        let nextShortPrice = -1;
+        let firstPrice = -1;
+        let lastShortPrice = -1;
         let i = 1;
 
         if(this.shorts.length == 0) {
-            lastTradePrice = this.longs[0].open * 1;
+            firstPrice = this.longs[0].open;
+            lastShortPrice = firstPrice;
         } else {
-            lastTradePrice = this.shorts[this.shorts.length - 1].open * 1;
+            firstPrice = this.shorts[0].open;
+            lastShortPrice = this.shorts[this.shorts.length - 1].open;
         }
 
-        while(nextShortPrice >= lastTradePrice) {
-            nextShortPrice = this.firstPrice * Math.pow(0.98, i);
+        nextShortPrice = firstPrice;
+        while(nextShortPrice >= lastShortPrice) {
+            let coef = 0.02 * i;
+            nextShortPrice = firstPrice * (1 - coef);
             i++;
         }
+
         return nextShortPrice;
     }
 
@@ -194,7 +221,6 @@ class PercentTradeStrategy extends TradeStrategy {
             this.avgMinutesToClose = (totalMinutes / (this.tradeCount+1));
         }
 
-
         return minutesToClose;
     }
 
@@ -218,13 +244,19 @@ class PercentTradeStrategy extends TradeStrategy {
         this.setMaxAndAvgNbSubTrades(nbsubtrades);
         this.tradeCount++;
 
+
+        if(this.longs.length + this.shorts.length == 5) 
+        {
+            console.log("!!!")
+        }
+
         console.log(
             `close ${type}, ` + 
             `time to close : ${Math.round(minutesToClose/60)}, ` + 
             `max : ${Math.round(this.maxMinutesToClose/60)}, ` + 
             `avg : ${Math.round(this.avgMinutesToClose/60)}, ` + 
-            `nb l: ${this.longs.length + this.shorts.length}, ` + 
-            `${this.shorts.length == 1 && this.longs.length == 1 ? " XXX " : "" }` + 
+            `nb : ${nbsubtrades}, ` + 
+            // `${this.shorts.length == 1 && this.longs.length == 1 ? " XXX " : "" }` + 
             `max : ${this.maxNbSubTrades}, ` + 
             `avg : ${this.avgNbSubTrades}, ` + 
             `totalwin : ${this.totalWin}, ` +
