@@ -1,5 +1,5 @@
 const TradeStrategy = require("./tradestrategy");
-const { datediff } = require("../utils/date");
+const { datediff, formatDate } = require("../utils/date");
 
 class PercentTradeStrategy extends TradeStrategy {
 
@@ -223,11 +223,12 @@ class PercentTradeStrategy extends TradeStrategy {
             `time to close : ${Math.round(minutesToClose/60)}, ` + 
             `max : ${Math.round(this.maxMinutesToClose/60)}, ` + 
             `avg : ${Math.round(this.avgMinutesToClose/60)}, ` + 
-            `nb : ${this.longs.length + this.shorts.length}, ` + 
+            `nb l: ${this.longs.length + this.shorts.length}, ` + 
+            `${this.shorts.length == 1 && this.longs.length == 1 ? " XXX " : "" }` + 
             `max : ${this.maxNbSubTrades}, ` + 
             `avg : ${this.avgNbSubTrades}, ` + 
             `totalwin : ${this.totalWin}, ` +
-            `time : ${closetime.getFullYear()}-${closetime.getMonth()}-${closetime.getDay()}`);
+            `time : ${formatDate(closetime)}`);
     }
     
 }
