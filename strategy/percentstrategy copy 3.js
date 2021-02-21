@@ -14,13 +14,7 @@ class PercentTradeStrategy extends TradeStrategy {
     longs = new Array();
     shorts = new Array();
     firstPrice = 0;
-
-    maxMinutesToClose = 0;
-    avgMinutesToClose = -1;
-    maxNbSubTrades = 0;
-    avgNbSubTrades = -1;
-    tradeCount = 0;
-    // allMinutesToClose = new Array();
+    allMinutesToClose = new Array();
 
     BASE_ASSET = 100;
     totalWin = 0;
@@ -107,6 +101,7 @@ class PercentTradeStrategy extends TradeStrategy {
                 nextShortPrice = this.getNextShortPrice();
             }
         }
+        //console.log(`nextLongPrice:${nextLongPrice}, nextShortPrice:${nextShortPrice}, close:${lastKline.close}, time:${lastKline.closetime}`)
     }
 
     getNextLongPrice() {
@@ -182,52 +177,31 @@ class PercentTradeStrategy extends TradeStrategy {
     getMinuteToClose(closetime) {
         const lowerTradeTime = this.getLowerTradeTime();
         const minutesToClose = datediff(closetime, lowerTradeTime);
-
-        if(this.maxMinutesToClose < minutesToClose) {
-            this.maxMinutesToClose = minutesToClose;
-        }
-
-        if(this.avgMinutesToClose == -1) {
-            this.avgMinutesToClose = minutesToClose;
-        } else {
-            const totalMinutes = (this.avgMinutesToClose * this.tradeCount) + minutesToClose;
-            this.avgMinutesToClose = (totalMinutes / (this.tradeCount+1));
-        }
-
-
+        this.allMinutesToClose.push(minutesToClose);
         return minutesToClose;
     }
 
-    setMaxAndAvgNbSubTrades(nbsubtrades) {
+    getMaxMinutesToClose() {
+        return Math.max( ...this.allMinutesToClose );
+    }
 
-        if(this.maxNbSubTrades < nbsubtrades) {
-            this.maxNbSubTrades = nbsubtrades;
+    getAvgMinutesToClose() {
+        var total = 0;
+        for(var i = 0; i < this.allMinutesToClose; i++) {
+            total += this.allMinutesToClose[i];
         }
-
-        if(this.avgNbSubTrades == -1) {
-            this.avgNbSubTrades = nbsubtrades;
-        } else {
-            const totalMinutes = (this.avgNbSubTrades * this.tradeCount) + nbsubtrades;
-            this.avgNbSubTrades = (totalMinutes / (this.tradeCount+1));
-        }
+        return total / this.allMinutesToClose.length;
     }
 
     logTradeInfo(type, closetime) {
         let minutesToClose = this.getMinuteToClose(closetime);
-        let nbsubtrades = this.longs.length + this.shorts.length;
-        this.setMaxAndAvgNbSubTrades(nbsubtrades);
-        this.tradeCount++;
-
         console.log(
-            `close ${type}, ` + 
+            `close all for ${type}, ` + 
             `time to close : ${Math.round(minutesToClose/60)}, ` + 
-            `max : ${Math.round(this.maxMinutesToClose/60)}, ` + 
-            `avg : ${Math.round(this.avgMinutesToClose/60)}, ` + 
-            `nb : ${this.longs.length + this.shorts.length}, ` + 
-            `max : ${this.maxNbSubTrades}, ` + 
-            `avg : ${this.avgNbSubTrades}, ` + 
+            `max : ${Math.round(this.getMaxMinutesToClose()/60)}, ` + 
+            `avg : ${this.getAvgMinutesToClose()}, ` + 
             `totalwin : ${this.totalWin}, ` +
-            `time : ${closetime.getFullYear()}-${closetime.getMonth()}-${closetime.getDay()}`);
+            `time : ${closetime}`);
     }
     
 }

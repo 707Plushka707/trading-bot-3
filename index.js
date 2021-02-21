@@ -16,7 +16,7 @@ const start = async() => {
     const testconfig = {
         symbol: 'BTCUSDT',
         interval: '1m',
-        //closetime: { $gt: new Date(2020,12,11) }
+        closetime: { $gt: new Date(2019,9,25) }
     };
     
     const firstKline = await 
@@ -43,7 +43,7 @@ const start = async() => {
         }
 
         for(let i=0; i < klines.length; i++) {
-            percentTradeStrategy.addKline(klines[i].toJSON());
+            percentTradeStrategy.addKline(klines[i].toObject());
         }
 
         //console.log(klines[klines.length - 1].closetime)
