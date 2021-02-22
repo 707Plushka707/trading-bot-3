@@ -14,7 +14,7 @@ const start = async() => {
     console.log("start");
 
     const testconfig = {
-        symbol: 'BTCUSDT',
+        symbol: 'BNBUSDT',
         interval: '1m',
         closetime: { $gt: new Date(2019,9,25) }
     };

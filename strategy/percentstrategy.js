@@ -1,6 +1,9 @@
 const TradeStrategy = require("./tradestrategy");
 const { datediff, formatDate } = require("../utils/date");
 
+const SPREAD = 0.03;
+const MAX_DIFF = 0;
+
 class PercentTradeStrategy extends TradeStrategy {
 
     /*
@@ -9,8 +12,8 @@ class PercentTradeStrategy extends TradeStrategy {
         opentime: timestamp,
         amount: amount
     }
-
     */
+
     longs = new Array();
     shorts = new Array();
 
@@ -50,7 +53,7 @@ class PercentTradeStrategy extends TradeStrategy {
         if(lastKline.close * 1 >= nextLongPrice) {
             while(lastKline.close >= nextLongPrice) {
                 // +2%
-                if(this.longs.length > this.shorts.length) {
+                if(this.longs.length >= this.shorts.length + MAX_DIFF) {
                     // close all
                     this.longs.forEach((l) => {
                         this.totalWin += ((nextLongPrice * l.amount) - this.BASE_ASSET);
@@ -79,7 +82,7 @@ class PercentTradeStrategy extends TradeStrategy {
         if(lastKline.close * 1 <= nextShortPrice) {
             while(lastKline.close <= nextShortPrice) {
                 // -2%
-                if(this.shorts.length > this.longs.length) {
+                if(this.shorts.length >= this.longs.length + MAX_DIFF) {
                     // close all
                     this.shorts.forEach((s) => {
                         this.totalWin += ((nextShortPrice * s.amount) - this.BASE_ASSET) * -1;
@@ -121,7 +124,7 @@ class PercentTradeStrategy extends TradeStrategy {
 
         nextLongPrice = firstPrice;
         while(nextLongPrice <= lastLongPrice) {
-            let coef = 0.02 * i;
+            let coef = SPREAD * i;
             nextLongPrice = firstPrice * (1 + coef);
             i++;
         }
@@ -164,7 +167,7 @@ class PercentTradeStrategy extends TradeStrategy {
 
         nextShortPrice = firstPrice;
         while(nextShortPrice >= lastShortPrice) {
-            let coef = 0.02 * i;
+            let coef = SPREAD * i;
             nextShortPrice = firstPrice * (1 - coef);
             i++;
         }
